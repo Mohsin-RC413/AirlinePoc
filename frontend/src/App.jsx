@@ -15,6 +15,12 @@ import BookingPage from './pages/BookingPage';
 import ReservationConfirmationPage from './pages/ReservationConfirmationPage';
 
 const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+const SUGGESTED_PROMPTS = [
+  'Create a new trip',
+  'Inspire me where to go',
+  'Weekend getaways',
+  'Beautiful hotels in Europe',
+];
 
 const INITIAL_MESSAGES = [
   {
@@ -131,6 +137,7 @@ function ChatApp() {
   const [chatError, setChatError] = useState('');
   const [isSending, setIsSending] = useState(false);
   const chatWindowRef = useRef(null);
+  const inputRef = useRef(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -338,28 +345,29 @@ function ChatApp() {
     setSelectedDate(iso);
   };
 
+  const handleQuickPrompt = (prompt) => {
+    setInput(prompt);
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
     <div className="page">
-      <div className="hero">
+      <div className="topbar">
         <header className="brand">
           <span className="brand-mark">ez</span>
           <span className="brand-name">booking</span>
-          <span className="brand-trade">TM</span>
+          <span className="brand-trade">tm</span>
         </header>
-
+      </div>
+      <div className="hero">
         <section className="headline">
-          {/* <h1>Plan smarter trips with your AI travel concierge</h1> */}
-          <p>
-            Ask anything about flights, seats, upgrades, and let the assistant
-            curate a perfect itinerary in seconds.
-          </p>
+          <h1>Hey, where are we going today?</h1>
+          <p>Tell me what you want, and I&apos;ll handle the rest in seconds.</p>
         </section>
 
         <main className="chat-card">
-          <div className="chat-header">
-            <div className="status-dot" />
-            <h2>Travel Concierge</h2>
-          </div>
 
           <div className="chat-window" ref={chatWindowRef}>
             {messages.map((message) => (
@@ -398,9 +406,10 @@ function ChatApp() {
             <input
               value={input}
               onChange={(event) => setInput(event.target.value)}
-              placeholder="Ask for flights, availability, upgrades, or booking help…"
+              placeholder="Help me plan a budget-friendly trip..."
               aria-label="Message the travel concierge"
               disabled={sessionLoading}
+              ref={inputRef}
             />
             <button
               type="submit"
@@ -409,6 +418,19 @@ function ChatApp() {
               {isSending ? 'Sending…' : 'Send'}
             </button>
           </form>
+
+          <div className="prompt-pills">
+            {SUGGESTED_PROMPTS.map((prompt) => (
+              <button
+                key={prompt}
+                type="button"
+                className="pill"
+                onClick={() => handleQuickPrompt(prompt)}
+              >
+                {prompt}
+              </button>
+            ))}
+          </div>
         </main>
 
         <section className="calendar-card">

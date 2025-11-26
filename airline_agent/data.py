@@ -7,13 +7,45 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timedelta
-from typing import Any, Dict, Iterable, List
+import os
+from datetime import date, datetime, timedelta
+from typing import Any, Dict, Iterable, List, Optional
+
+# Anchor schedule generation to "today" so older departures are discarded.
+# Keep this in sync with consts.CURRENT_DATE_OVERRIDE and utils.DATE_OVERRIDE.
+def _resolve_start_date() -> date:
+    env_today = os.getenv("AROYA_TODAY")
+    if env_today:
+        try:
+            return datetime.fromisoformat(env_today).date()
+        except ValueError:
+            pass
+    return date.today()
+
+
+REFERENCE_START_DATE = _resolve_start_date()
+
+
+def _align_to_start(
+    dep_base: datetime,
+    arr_base: datetime,
+    start_date: date,
+) -> tuple[datetime, datetime]:
+    """
+    Shift the base departure/arrival forward so the first generated flight
+    cannot fall before the configured start date (today).
+    """
+    if dep_base.date() >= start_date:
+        return dep_base, arr_base
+
+    delta = timedelta(days=(start_date - dep_base.date()).days)
+    return dep_base + delta, arr_base + delta
 
 
 def _generate_schedule(
     routes: Iterable[Dict[str, Any]],
     flights_per_route: int = 5,
+    start_date: Optional[date] = None,
 ) -> List[Dict[str, Any]]:
     """Expand every base route into multiple dated services.
 
@@ -23,10 +55,12 @@ def _generate_schedule(
     """
 
     flights: List[Dict[str, Any]] = []
+    start = start_date or REFERENCE_START_DATE
 
     for route in routes:
-        dep_base = datetime.fromisoformat(route["departure_time"])
-        arr_base = datetime.fromisoformat(route["arrival_time"])
+        dep_base_raw = datetime.fromisoformat(route["departure_time"])
+        arr_base_raw = datetime.fromisoformat(route["arrival_time"])
+        dep_base, arr_base = _align_to_start(dep_base_raw, arr_base_raw, start)
 
         status_sequence = route.get("status_sequence") or [route.get("status", "On Time")]
         price_step = route.get("price_step", 0.0)
@@ -589,8 +623,12 @@ BASE_ROUTES: List[Dict[str, Any]] = [
 ]
 
 
-# Generate a broad, deterministic schedule (≈ 100 flights).
-GENERATED_FLIGHTS = _generate_schedule(BASE_ROUTES, flights_per_route=5)
+# Generate a broad, deterministic schedule (~100 flights) starting from 2025-11-26.
+GENERATED_FLIGHTS = _generate_schedule(
+    BASE_ROUTES,
+    flights_per_route=5,
+    start_date=REFERENCE_START_DATE,
+)
 
 data = {"flights": GENERATED_FLIGHTS}
 data_two_rows = {"flights": GENERATED_FLIGHTS[:2]}

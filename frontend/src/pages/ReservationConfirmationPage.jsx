@@ -590,7 +590,7 @@ function ReservationConfirmationPage() {
               </section>
 
               <section className="reservation-section reservation-section--split">
-                <div className="reservation-card">
+                <div className="reservation-card reservation-card--itinerary">
                   <h3>Flight itinerary</h3>
                   <dl className="reservation-definition">
                     {flight?.airline ? (
@@ -602,11 +602,11 @@ function ReservationConfirmationPage() {
                     {departureCity || departureCode || arrivalCity || arrivalCode ? (
                       <>
                         <dt>Route</dt>
-                        <dd>
+                        <dd className="reservation-definition__route">
                           {departureCity || departureCode
                             ? `${departureCity || 'Unknown'}${departureCode ? ` (${departureCode})` : ''}`
                             : 'N/A'}{' '}
-                          ✈{' '}
+                          <span aria-hidden="true">✈</span>{' '}
                           {arrivalCity || arrivalCode
                             ? `${arrivalCity || 'Unknown'}${arrivalCode ? ` (${arrivalCode})` : ''}`
                             : 'N/A'}

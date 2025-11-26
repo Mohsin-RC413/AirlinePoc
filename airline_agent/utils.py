@@ -1,9 +1,14 @@
 # aroya_air/utils.py
 from __future__ import annotations
+import os
 from typing import List, Tuple, Iterable, Optional, Dict, Any, Set
 from datetime import datetime, timezone, date, timedelta
 from .models import Flight, SearchCriteria, FlightStatus, Passenger
 import uuid
+
+# Optional manual override for "today" (e.g., tests); otherwise resolve dynamically.
+# Keep this aligned with data.REFERENCE_START_DATE and consts.CURRENT_DATE_OVERRIDE.
+DATE_OVERRIDE: Optional[date] = None
 
 def now_utc() -> datetime:
     return datetime.now(timezone.utc)
@@ -52,7 +57,14 @@ def parse_date_flexible(value: str, today: Optional[date] = None) -> Optional[da
         return None
 
     v = value.strip()
-    today = today or datetime.today().date()
+    env_today = os.getenv("AROYA_TODAY")
+    resolved_today = None
+    if env_today:
+        try:
+            resolved_today = datetime.fromisoformat(env_today).date()
+        except ValueError:
+            resolved_today = None
+    today = today or DATE_OVERRIDE or resolved_today or datetime.today().date()
     low = v.lower()
 
     # Relative
