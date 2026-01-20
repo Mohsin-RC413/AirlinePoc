@@ -778,9 +778,6 @@ function ReservationConfirmationPage() {
                       </button>
                     </header>
                     <div className="reservation-seat-modal__body">
-                      <p id="seat-map-modal-description" className="reservation-seat-modal__intro">
-                        Tap a seat to toggle it, then confirm to save your selection.
-                      </p>
                       <SeatMap
                         seatMap={seatMap}
                         selectedSeats={selectedSeats}

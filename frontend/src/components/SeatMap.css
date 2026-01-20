@@ -230,6 +230,19 @@
   font-size: 13px;
 }
 
+.seat-map__summary {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  font-size: 13px;
+  color: #0f172a;
+  font-weight: 600;
+}
+
+.seat-map__summary strong {
+  font-weight: 700;
+}
+
 .seat-map__legend-item {
   display: inline-flex;
   align-items: center;

@@ -44,15 +44,37 @@ const buildLegend = (sections) => {
   if (!sections.length) {
     return [];
   }
-  const hasUnavailable = sections.some((section) =>
-    section.rows.some((row) =>
-      row.seats.some((seat) => seat.status !== 'available'),
-    ),
-  );
-  const items = [...LEGEND_ITEMS];
-  if (hasUnavailable) {
-    items.push({ key: 'unavailable', label: 'Unavailable' });
+  const counts = {
+    premium: 0,
+    legroom: 0,
+    front: 0,
+    standard: 0,
+    unavailable: 0,
+  };
+
+  sections.forEach((section) => {
+    section.rows.forEach((row) => {
+      const rowNumber = parseRowNumber(row.label);
+      row.seats.forEach((seat) => {
+        if (seat.status === 'available') {
+          const tier = getSeatTier(seat, rowNumber);
+          counts[tier] += 1;
+        } else {
+          counts.unavailable += 1;
+        }
+      });
+    });
+  });
+
+  const items = LEGEND_ITEMS.map((item) => ({
+    ...item,
+    count: counts[item.key] ?? 0,
+  }));
+
+  if (counts.unavailable > 0) {
+    items.push({ key: 'unavailable', label: 'Unavailable', count: counts.unavailable });
   }
+
   return items;
 };
 
@@ -129,7 +151,9 @@ const SeatLegend = ({ sections }) => {
           className={cx('seat-map__legend-item', `seat-map__legend-item--${item.key}`)}
         >
           <span className="seat-map__legend-swatch" aria-hidden />
-          <span className="seat-map__legend-label">{item.label}</span>
+          <span className="seat-map__legend-label">
+            {item.label} ({item.count})
+          </span>
         </span>
       ))}
     </div>
@@ -235,6 +259,23 @@ const SeatMap = ({
     [selectedSeatIds],
   );
 
+  const availabilitySummary = useMemo(() => {
+    let available = 0;
+    let booked = 0;
+    sections.forEach((section) => {
+      section.rows.forEach((row) => {
+        row.seats.forEach((seat) => {
+          if (seat.status === 'available') {
+            available += 1;
+          } else if (seat.status === 'booked') {
+            booked += 1;
+          }
+        });
+      });
+    });
+    return { available, booked };
+  }, [sections]);
+
   const renderSeatButton = (seat, rowNumber) => {
     const normalized = seat.id.toUpperCase();
     const isSelected = selectedSeatIds.has(normalized);
@@ -334,6 +375,15 @@ const SeatMap = ({
             </section>
           ))}
         </div>
+      </div>
+
+      <div className="seat-map__summary">
+        <span>
+          <strong>{availabilitySummary.available}</strong> available
+        </span>
+        <span>
+          <strong>{availabilitySummary.booked}</strong> booked
+        </span>
       </div>
 
       <SeatLegend sections={sections} />
