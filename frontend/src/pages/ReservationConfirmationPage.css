@@ -339,7 +339,7 @@
 
 .reservation-seat-modal__dialog {
   position: relative;
-  width: min(980px, 100%);
+  width: min(1240px, 98vw);
   max-height: 92vh;
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -347,7 +347,7 @@
   box-shadow: 0 32px 80px rgba(15, 23, 42, 0.12);
   display: flex;
   flex-direction: column;
-  overflow: hidden;
+  overflow: visible;
 }
 
 .reservation-seat-modal__header {
@@ -387,6 +387,7 @@
 .reservation-seat-modal__body {
   padding: 24px 28px 32px;
   overflow-y: auto;
+  overflow-x: visible;
 }
 
 .reservation-seat-modal__intro {
@@ -396,7 +397,7 @@
 }
 
 .reservation-seat-modal .seat-map {
-  width: 100%;
+  width: min(1200px, 100%);
 }
 
 .reservation-seat-modal .seat-map__sections {

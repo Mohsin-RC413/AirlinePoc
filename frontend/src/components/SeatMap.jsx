@@ -1,4 +1,4 @@
-import { Fragment, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 
 import './SeatMap.css';
 
@@ -10,7 +10,12 @@ const STATUS_LABELS = {
   pending: 'Pending confirmation',
 };
 
-const STATUS_ORDER = ['available', 'selected', 'held', 'pending', 'booked'];
+const LEGEND_ITEMS = [
+  { key: 'premium', label: 'Premium' },
+  { key: 'legroom', label: 'Extra legroom' },
+  { key: 'front', label: 'Front seats' },
+  { key: 'standard', label: 'Available - stay with family' },
+];
 
 const formatSeatTooltip = (seat, isSelected) => {
   const label = STATUS_LABELS[seat.status] ?? seat.status;
@@ -32,34 +37,57 @@ const formatSeatTooltip = (seat, isSelected) => {
   if (isSelected) {
     details.unshift('Selected seat');
   }
-  return `${seat.id}${details.length ? ` · ${details.join(' · ')}` : ''}`;
+  return `${seat.id}${details.length ? ` - ${details.join(' - ')}` : ''}`;
 };
 
-const groupLegend = (sections, selectedSeatIds) => {
-  const counts = STATUS_ORDER.reduce((acc, status) => {
-    acc[status] = 0;
-    return acc;
-  }, {});
+const buildLegend = (sections) => {
+  if (!sections.length) {
+    return [];
+  }
+  const hasUnavailable = sections.some((section) =>
+    section.rows.some((row) =>
+      row.seats.some((seat) => seat.status !== 'available'),
+    ),
+  );
+  const items = [...LEGEND_ITEMS];
+  if (hasUnavailable) {
+    items.push({ key: 'unavailable', label: 'Unavailable' });
+  }
+  return items;
+};
 
-  sections.forEach((section) => {
-    section.rows.forEach((row) => {
-      row.seats.forEach((seat) => {
-        const status =
-          selectedSeatIds.has(seat.id) && seat.status === 'available'
-            ? 'selected'
-            : seat.status;
-        if (counts[status] !== undefined) {
-          counts[status] += 1;
-        }
-      });
-    });
-  });
+const parseRowNumber = (value) => {
+  const match = String(value ?? '').match(/^\d+/);
+  if (!match) {
+    return null;
+  }
+  return Number(match[0]);
+};
 
-  return STATUS_ORDER.filter((status) => counts[status] > 0).map((status) => ({
-    status,
-    label: STATUS_LABELS[status] ?? status,
-    count: counts[status],
-  }));
+const getSeatTier = (seat, rowNumber) => {
+  const numericRow =
+    Number.isFinite(rowNumber) && rowNumber > 0
+      ? rowNumber
+      : parseRowNumber(seat.id);
+
+  if (seat.extra?.legroom && numericRow === 1) {
+    return 'premium';
+  }
+  if (seat.extra?.legroom || seat.extra?.exitRow) {
+    return 'legroom';
+  }
+  if (Number.isFinite(numericRow) && numericRow <= 4) {
+    return 'front';
+  }
+  return 'standard';
+};
+
+const splitRowSeats = (seats) => {
+  const midpoint = Math.floor(seats.length / 2);
+  return {
+    left: seats.slice(0, midpoint),
+    right: seats.slice(midpoint),
+  };
 };
 
 const cx = (...input) => {
@@ -86,11 +114,8 @@ const cx = (...input) => {
   return classes.join(' ');
 };
 
-const SeatLegend = ({ sections, selectedSeatIds }) => {
-  const legend = useMemo(
-    () => groupLegend(sections, selectedSeatIds),
-    [sections, selectedSeatIds],
-  );
+const SeatLegend = ({ sections }) => {
+  const legend = useMemo(() => buildLegend(sections), [sections]);
 
   if (!legend.length) {
     return null;
@@ -100,14 +125,11 @@ const SeatLegend = ({ sections, selectedSeatIds }) => {
     <div className="seat-map__legend">
       {legend.map((item) => (
         <span
-          key={item.status}
-          className={cx('seat-map__legend-item', `seat-map__legend-item--${item.status}`)}
+          key={item.key}
+          className={cx('seat-map__legend-item', `seat-map__legend-item--${item.key}`)}
         >
           <span className="seat-map__legend-swatch" aria-hidden />
-          <span className="seat-map__legend-label">
-            {item.label}
-            <span className="seat-map__legend-count">({item.count})</span>
-          </span>
+          <span className="seat-map__legend-label">{item.label}</span>
         </span>
       ))}
     </div>
@@ -162,7 +184,7 @@ const SeatConfirmationDialog = ({
             onClick={() => onConfirm(selectedSeatIds)}
             disabled={!selectedSeatIds.length || isSyncing}
           >
-            {isSyncing ? 'Saving…' : 'Confirm seats'}
+            {isSyncing ? 'Saving...' : 'Confirm seats'}
           </button>
         </div>
       </div>
@@ -184,7 +206,6 @@ const SeatMap = ({
     [selectedSeats],
   );
   const sections = seatMap?.sections ?? [];
-  const meta = seatMap?.meta ?? {};
 
   const handleSeatClick = (seat) => {
     if (isSyncing || !onSeatToggle) {
@@ -214,100 +235,124 @@ const SeatMap = ({
     [selectedSeatIds],
   );
 
+  const renderSeatButton = (seat, rowNumber) => {
+    const normalized = seat.id.toUpperCase();
+    const isSelected = selectedSeatIds.has(normalized);
+    const isUnavailable = seat.status !== 'available' && !isSelected;
+    const tier = getSeatTier(seat, rowNumber);
+
+    return (
+      <button
+        key={seat.id}
+        type="button"
+        className={cx(
+          'seat-map__seat',
+          `seat-map__seat--${seat.status}`,
+          `seat-map__seat--tier-${tier}`,
+          {
+            'seat-map__seat--selected': isSelected,
+            'seat-map__seat--syncing': isSyncing && isSelected,
+            'seat-map__seat--unavailable': isUnavailable,
+          },
+        )}
+        onClick={() => handleSeatClick(seat)}
+        disabled={isUnavailable || isSyncing}
+        data-tooltip={formatSeatTooltip(seat, isSelected)}
+        aria-pressed={isSelected}
+        aria-label={formatSeatTooltip(seat, isSelected)}
+      >
+        <span>{seat.display ?? seat.id}</span>
+      </button>
+    );
+  };
+
   return (
     <div className="seat-map">
-      <header className="seat-map__header">
-        <div>
-          <h3>Seat selection</h3>
-          <p>
-            Pick your preferred seats from the cabin layout below. Hover to see seat details and click to toggle selection.
-          </p>
-        </div>
-        <div className="seat-map__meta">
-          {typeof meta.availableSeats === 'number' ? (
-            <span>
-              <strong>{meta.availableSeats}</strong> available
-            </span>
-          ) : null}
-          {typeof meta.bookedSeats === 'number' ? (
-            <span>
-              <strong>{meta.bookedSeats}</strong> booked
-            </span>
-          ) : null}
-        </div>
-      </header>
-
-      <SeatLegend sections={sections} selectedSeatIds={selectedSeatIds} />
-
       {syncError ? (
         <div className="seat-map__error" role="status">
           {syncError}
         </div>
       ) : null}
 
-      <div className="seat-map__sections" role="list">
-        {sections.map((section) => (
-          <section
-            key={section.id}
-            className="seat-map__section"
-            aria-label={section.label}
-          >
-            <header className="seat-map__section-header">
-              <h4>{section.label}</h4>
-              {section.subtitle ? <span>{section.subtitle}</span> : null}
-            </header>
-            <div className="seat-map__grid" role="group">
-              {section.rows.map((row) => (
-                <Fragment key={row.id ?? row.label}>
-                  <div className="seat-map__row-label" aria-hidden>
-                    {row.label}
-                  </div>
-                  <div className="seat-map__row">
-                    {row.seats.map((seat) => {
-                      const normalized = seat.id.toUpperCase();
-                      const isSelected = selectedSeatIds.has(normalized);
-                      const isUnavailable =
-                        seat.status !== 'available' && !isSelected;
-                      return (
-                        <button
-                          key={seat.id}
-                          type="button"
-                          className={cx(
-                            'seat-map__seat',
-                            `seat-map__seat--${seat.status}`,
-                            {
-                              'seat-map__seat--selected': isSelected,
-                              'seat-map__seat--syncing': isSyncing && isSelected,
-                              'seat-map__seat--unavailable': isUnavailable,
-                              'seat-map__seat--window': seat.type === 'window',
-                              'seat-map__seat--aisle': seat.type === 'aisle',
-                            },
-                          )}
-                          onClick={() => handleSeatClick(seat)}
-                          disabled={isUnavailable || isSyncing}
-                          data-tooltip={formatSeatTooltip(seat, isSelected)}
-                          aria-pressed={isSelected}
-                          aria-label={formatSeatTooltip(seat, isSelected)}
-                        >
-                          <span>{seat.display ?? seat.id}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                </Fragment>
-              ))}
-            </div>
-          </section>
-        ))}
+      <div className="seat-map__plane">
+        <svg
+          className="seat-map__plane-illustration"
+          viewBox="-220 0 840 900"
+          preserveAspectRatio="xMidYMid meet"
+          aria-hidden="true"
+        >
+          <g fill="#eef2f7" stroke="#cbd5e1" strokeWidth="2">
+            <path d="M120 320 L-220 420 L-200 540 L120 450 Z" />
+            <path d="M280 320 L620 420 L600 540 L280 450 Z" />
+            <path d="M150 700 L0 760 L20 830 L150 780 Z" />
+            <path d="M250 700 L400 760 L380 830 L250 780 Z" />
+          </g>
+          <g fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2">
+            <path d="M200 30 C270 30 330 110 330 190 L330 720 C330 810 270 870 200 870 C130 870 70 810 70 720 L70 190 C70 110 130 30 200 30 Z" />
+          </g>
+          <g fill="#ffffff" stroke="#cbd5e1" strokeWidth="2">
+            <rect x="60" y="150" width="20" height="36" rx="6" />
+            <rect x="320" y="150" width="20" height="36" rx="6" />
+            <rect x="60" y="570" width="20" height="36" rx="6" />
+            <rect x="320" y="570" width="20" height="36" rx="6" />
+          </g>
+          <g fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="2">
+            <rect x="186" y="70" width="28" height="30" rx="7" />
+            <rect x="176" y="100" width="48" height="18" rx="7" />
+          </g>
+          <g fill="none" stroke="#d1d5db" strokeWidth="2">
+            <path d="M180 120 L220 120" />
+            <path d="M180 820 L220 820" />
+          </g>
+        </svg>
+        <div className="seat-map__cabin" role="list">
+          {sections.map((section) => (
+            <section
+              key={section.id}
+              className="seat-map__section"
+              aria-label={section.label}
+            >
+              {section.label ? (
+                <h4 className="seat-map__sr-only">{section.label}</h4>
+              ) : null}
+              {section.subtitle ? (
+                <p className="seat-map__sr-only">{section.subtitle}</p>
+              ) : null}
+              <div className="seat-map__rows" role="group">
+                {section.rows.map((row) => {
+                  const rowNumber = parseRowNumber(row.label);
+                  const { left, right } = splitRowSeats(row.seats);
+                  return (
+                    <div
+                      key={row.id ?? row.label}
+                      className="seat-map__plane-row"
+                    >
+                      <div className="seat-map__seat-bank seat-map__seat-bank--left">
+                        {left.map((seat) => renderSeatButton(seat, rowNumber))}
+                      </div>
+                      <div className="seat-map__seat-bank seat-map__seat-bank--right">
+                        {right.map((seat) => renderSeatButton(seat, rowNumber))}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
+          ))}
+        </div>
       </div>
+
+      <SeatLegend sections={sections} />
 
       <footer className="seat-map__footer">
         <div className="seat-map__selection">
-          <span>Selected seats:</span>
+          <span className="seat-map__selection-label">Selected seats</span>
           {sortedSelected.length ? (
-            <ul>
+            <ul className="seat-map__selection-list">
               {sortedSelected.map((seatId) => (
-                <li key={seatId}>{seatId}</li>
+                <li key={seatId} className="seat-map__selection-chip">
+                  {seatId}
+                </li>
               ))}
             </ul>
           ) : (
@@ -321,7 +366,7 @@ const SeatMap = ({
             onClick={handleConfirm}
             disabled={isSyncing || !sortedSelected.length}
           >
-            {isSyncing ? 'Saving selection…' : 'Confirm selection'}
+            {isSyncing ? 'Saving selection...' : 'Confirm selection'}
           </button>
         ) : null}
       </footer>

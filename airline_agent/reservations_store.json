@@ -231,6 +231,50 @@
     "seat_class": "Economy",
     "total_price_usd": 1077.86
   },
+  "RSV-342F9703": {
+    "booked_at": "2026-01-20T06:19:43.239419Z",
+    "flight_details": {
+      "aircraft_type": "Airbus A350-900",
+      "airline": "Turkish Airlines",
+      "arrival_airport": "Istanbul Airport",
+      "arrival_airport_code": "IST",
+      "arrival_city": "Istanbul",
+      "arrival_time": "2026-01-20T06:15:00+03:00",
+      "available_classes": [
+        "Economy",
+        "Business"
+      ],
+      "baggage_allowance": "30kg + 7kg",
+      "departure_airport": "Singapore Changi Airport",
+      "departure_airport_code": "SIN",
+      "departure_city": "Singapore",
+      "departure_time": "2026-01-20T00:45:00+08:00",
+      "duration": "11h 30m",
+      "flight_id": "TK21501",
+      "flight_number": "TK215",
+      "inflight_entertainment": true,
+      "price_usd": 1185.7,
+      "seats_available": 28,
+      "status": "On Time",
+      "wifi_available": true
+    },
+    "flight_id": "TK21501",
+    "passenger_count": 1,
+    "passengers": [
+      {
+        "age": 25,
+        "dob": "2000-05-28",
+        "email": "mohsinullah68@gmail.com",
+        "gender": "Male",
+        "name": "Mohsin Ullah"
+      }
+    ],
+    "reservation_id": "RSV-342F9703",
+    "seat_assignments": [],
+    "seat_assignments_updated_at": "2026-01-20T06:19:43.239419Z",
+    "seat_class": "Economy",
+    "total_price_usd": 1185.7
+  },
   "RSV-36B981DF": {
     "booked_at": "2025-11-07T11:07:30.942360Z",
     "flight_details": {
