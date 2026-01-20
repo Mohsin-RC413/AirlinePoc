@@ -339,7 +339,7 @@
 
 .reservation-seat-modal__dialog {
   position: relative;
-  width: min(1240px, 98vw);
+  width: min(960px, 96vw);
   max-height: 92vh;
   background: #ffffff;
   border: 1px solid #e2e8f0;
@@ -397,7 +397,7 @@
 }
 
 .reservation-seat-modal .seat-map {
-  width: min(1200px, 100%);
+  width: min(820px, 100%);
 }
 
 .reservation-seat-modal .seat-map__sections {
