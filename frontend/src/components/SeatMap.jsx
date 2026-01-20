@@ -291,8 +291,8 @@ const SeatMap = ({
             <rect x="370" y="570" width="22" height="40" rx="7" />
           </g>
           <g fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="2">
-            <rect x="206" y="70" width="30" height="32" rx="8" />
-            <rect x="194" y="102" width="52" height="20" rx="8" />
+            <rect x="205" y="58" width="30" height="32" rx="8" />
+            <rect x="194" y="92" width="52" height="20" rx="8" />
           </g>
           <g fill="none" stroke="#d1d5db" strokeWidth="2">
             <path d="M180 120 L220 120" />
