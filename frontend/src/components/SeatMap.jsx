@@ -277,22 +277,22 @@ const SeatMap = ({
       <div className="seat-map__plane">
         <svg
           className="seat-map__plane-illustration"
-          viewBox="0 0 400 900"
+          viewBox="0 0 440 900"
           preserveAspectRatio="xMidYMid meet"
           aria-hidden="true"
         >
           <g fill="#f8fafc" stroke="#cbd5e1" strokeWidth="2">
-            <path d="M200 30 C280 30 350 110 350 190 L350 720 C350 810 280 870 200 870 C120 870 50 810 50 720 L50 190 C50 110 120 30 200 30 Z" />
+            <path d="M220 30 C310 30 380 110 380 190 L380 720 C380 810 310 870 220 870 C130 870 60 810 60 720 L60 190 C60 110 130 30 220 30 Z" />
           </g>
           <g fill="#ffffff" stroke="#cbd5e1" strokeWidth="2">
-            <rect x="40" y="150" width="20" height="36" rx="6" />
-            <rect x="340" y="150" width="20" height="36" rx="6" />
-            <rect x="40" y="570" width="20" height="36" rx="6" />
-            <rect x="340" y="570" width="20" height="36" rx="6" />
+            <rect x="50" y="150" width="22" height="40" rx="7" />
+            <rect x="370" y="150" width="22" height="40" rx="7" />
+            <rect x="50" y="570" width="22" height="40" rx="7" />
+            <rect x="370" y="570" width="22" height="40" rx="7" />
           </g>
           <g fill="#e2e8f0" stroke="#cbd5e1" strokeWidth="2">
-            <rect x="186" y="70" width="28" height="30" rx="7" />
-            <rect x="176" y="100" width="48" height="18" rx="7" />
+            <rect x="206" y="70" width="30" height="32" rx="8" />
+            <rect x="194" y="102" width="52" height="20" rx="8" />
           </g>
           <g fill="none" stroke="#d1d5db" strokeWidth="2">
             <path d="M180 120 L220 120" />
